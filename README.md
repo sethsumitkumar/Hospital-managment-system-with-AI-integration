@@ -20,8 +20,7 @@ AI Integration: Python / APIs
 
 ##  Installation
 1. Clone the repository  
-git clone https://github.com/sethsumitkumar/Hospital-management-system-with-AI-integration.git  
-
+git clone https://hospital-managment-system-with-ai.onrender.com/
 2. Navigate to project folder  
 cd Hospital-management-system-with-AI-integration  
 
