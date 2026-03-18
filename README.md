@@ -4,6 +4,10 @@ Hospital Management System with AI Integration
 ##  Description
 This project is a Hospital Management System that helps manage hospital operations such as patient records, doctor details, and appointments. It also includes AI integration to improve efficiency and provide smart suggestions.
 
+this is the admin and password :
+Username:admin
+Password: hospital123
+
 ##  Features
 - Patient Registration & Management
 - Doctor Management
