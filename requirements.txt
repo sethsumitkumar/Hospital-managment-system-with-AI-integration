@@ -1,0 +1,8 @@
+Flask
+gunicorn
+joblib
+numpy
+pytesseract
+Pillow
+google-generativeai
+scikit-learn
