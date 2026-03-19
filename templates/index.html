@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Management System - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* INLINE CSS FOR OCR & LAYOUT FIXES */
+        .table-container { 
+            overflow-x: auto; 
+            white-space: nowrap; 
+        }
+        
+        .ocr-box {
+            background: #e8f5e9; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            border: 2px dashed #4caf50;
+            text-align: center;
+        }
+
+        .ocr-btn {
+            background: #2e7d32; 
+            color: white; 
+            border: none; 
+            padding: 8px 15px; 
+            cursor: pointer; 
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .ocr-btn:hover { background: #1b5e20; }
+        
+        .btn-quick { 
+            flex: 1; 
+            padding: 6px; 
+            background: #f5f5f5; 
+            border: 1px solid #ddd; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 11px; 
+            color: #555;
+            transition: background 0.2s;
+        }
+        .btn-quick:hover { background: #e0e0e0; color: #000; }
+
+        /* ADMIN HEADER & DASHBOARD BUTTON STYLE */
+        .admin-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #b71c1c;
+            color: white;
+            padding: 10px 20px;
+        }
+        .nav-links { display: flex; gap: 10px; }
+        .logout-link, .dash-link {
+            background: white;
+            color: #b71c1c;
+            padding: 5px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .dash-link { color: #0d47a1; }
+
+        /* NEW APPOINTMENT TABLE STYLING */
+        .appt-section {
+            background: #fff;
+            border: 1px solid #0d47a1;
+            border-radius: 8px;
+            margin-top: 30px;
+            padding: 20px;
+        }
+        .appt-header {
+            color: #0d47a1;
+            border-bottom: 2px solid #0d47a1;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-nav">
+    <span style="font-weight: bold;">🔐 ADMIN SESSION ACTIVE</span>
+    <div class="nav-links">
+        <a href="{{ url_for('dashboard_view') }}" class="dash-link">📊 View Analytics Dashboard</a>
+        <a href="/logout" class="logout-link">Logout</a>
+    </div>
+</div>
+
+<div class="header">
+    <h1>HOSPITAL MANAGEMENT SYSTEM (AI INTEGRATED)</h1>
+</div>
+
+<div class="container">
+    <div class="form-container">
+        <div class="ocr-box">
+            <h3 style="margin-top: 0; color: #2e7d32;">📸 Smart Scan (AI Vision)</h3>
+            <p style="font-size: 14px; color: #555;">Upload a prescription image to auto-fill Patient Name & Medicine.</p>
+            <input type="file" id="ocrFile" accept="image/*">
+            <br>
+            <button type="button" onclick="scanPrescription()" class="ocr-btn">Scan & Auto-Fill</button>
+            <div id="ocrStatus" style="margin-top: 10px; font-weight: bold; font-size: 13px; color: #333;"></div>
+        </div>
+
+        <form id="patientForm" action="/add" method="POST">
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: span 2; background: #e3f2fd; padding: 10px; border-radius: 5px;">
+                    <label style="color: #0d47a1; font-weight: bold;">👨‍⚕️ Assign Doctor</label>
+                    <select name="doctor" id="doctor">
+                        <option value="">-- Select Doctor --</option>
+                        {% for doc in doctors %}
+                        <option value="{{ doc }}">{{ doc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Name of Tablets</label>
+                    <select name="name" id="name">
+                        <option value="Nice">Nice</option>
+                        <option value="Corona Vaccine">Corona Vaccine</option>
+                        <option value="Acetaminophen">Acetaminophen</option>
+                        <option value="Adderall">Adderall</option>
+                        <option value="Amlodipine">Amlodipine</option>
+                        <option value="Ativan">Ativan</option>
+                        <option value="Paracetamol">Paracetamol</option>
+                        <option value="Dollo">Dollo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Reference No</label>
+                    <input type="text" name="ref" id="ref" required placeholder="Enter Ref ID">
+                </div>
+                
+                <div class="form-group">
+                    <label>Disease / Condition</label>
+                    <input type="text" name="disease" id="disease" placeholder="e.g. Flu, Infection">
+                </div>
+
+                <div class="form-group">
+                    <label>Dose</label>
+                    <input type="text" name="dose" id="dose" placeholder="e.g. 500mg">
+                </div>
+
+                <div class="form-group">
+                    <label>No of Tablets</label>
+                    <input type="text" name="no_of_tablets" id="no_of_tablets" placeholder="Total Qty">
+                </div>
+
+                <div class="form-group">
+                    <label>Lot</label>
+                    <input type="text" name="lot" id="lot" placeholder="Batch No">
+                </div>
+
+                <div class="form-group">
+                    <label>Issue Date</label>
+                    <input type="date" name="issue_date" id="issue_date">
+                </div>
+
+                <div class="form-group">
+                    <label>Exp Date</label>
+                    <input type="date" name="exp_date" id="exp_date">
+                </div>
+
+                <div class="form-group">
+                    <label>Daily Dose</label>
+                    <input type="text" name="daily_dose" id="daily_dose" placeholder="Doses per day">
+                </div>
+
+                <div class="form-group">
+                    <label>Storage Advice</label>
+                    <input type="text" name="storage" id="storage" placeholder="e.g. cool place">
+                </div>
+
+                <div class="form-group">
+                    <label>📅 Registration Date</label>
+                    <input type="date" name="reg_date" id="reg_date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Patient Name</label>
+                    <input type="text" name="pname" id="pname" placeholder="Full Name">
+                </div>
+
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="text" name="dob" id="dob" placeholder="DD-MM-YYYY">
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Address</label>
+                    <input type="text" name="address" id="address" placeholder="Residential Address">
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn btn-add">Add Prescription</button>
+                <button type="submit" formaction="/update" class="btn btn-update">Update Record</button>
+                <button type="button" onclick="deleteRecord()" class="btn btn-delete">Delete Patient</button>
+                <button type="reset" class="btn btn-clear">Clear Form</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bottom-section">
+        <div class="table-container" style="width: 100%; height: 500px; border: 1px solid #ddd; background: white;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Assigned Doctor</th>
+                        <th>Ref No</th>
+                        <th>Patient Name</th>
+                        <th>Disease</th> 
+                        <th>Tablet</th>
+                        <th>Dose</th>
+                        <th>No of Tabs</th>
+                        <th>Issue Date</th>
+                        <th>Exp Date</th>
+                        <th>Daily Dose</th>
+                        <th>Storage</th>
+                        <th>Reg Date</th> <th>DOB</th>
+                        <th>Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in patients %}
+                    <tr onclick='fillForm({{ p|tojson }})' style="cursor: pointer;">
+                        <td style="font-weight:bold; color:blue;">{{ p.doctor }}</td>
+                        <td>{{ p.Reference_No }}</td>
+                        <td>{{ p.patientname }}</td>
+                        <td>{{ p.Disease }}</td> 
+                        <td>{{ p.Nameoftablets }}</td>
+                        <td>{{ p.dose }}</td>
+                        <td>{{ p.Numbersoftablets }}</td>
+                        <td>{{ p.issuedate }}</td>
+                        <td>{{ p.expdate }}</td>
+                        <td>{{ p.dailydose }}</td>
+                        <td>{{ p.storage }}</td>
+                        <td>{{ p.reg_date }}</td> <td>{{ p.DOB }}</td>
+                        <td>{{ p.patientaddress }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="appt-section">
+        <div class="appt-header">
+            <h3>📅 Live Appointment Records</h3>
+            <button onclick="loadAppointments()" style="padding:5px 10px; cursor:pointer;">Refresh List</button>
+        </div>
+        <div class="table-container" style="max-height: 400px;">
+            <table style="width:100%; text-align:left; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f0f2f5;">
+                        <th style="padding:12px; border:1px solid #ddd;">Patient Name</th>
+                        <th style="padding:12px; border:1px solid #ddd;">DOB</th>
+                        <th style="padding:12px; border:1px solid #ddd;">Ref No</th>
+                        <th style="padding:12px; border:1px solid #ddd;">Assigned Doctor</th>
+                        <th style="padding:12px; border:1px solid #ddd;">Time Slot</th>
+                        <th style="padding:12px; border:1px solid #ddd;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="appointmentTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="robot-icon" onclick="toggleChat()">
+    <img src="{{ url_for('static', filename='robo.webp') }}" alt="AI Help">
+</div>
+
+<div id="chat-popup" class="chat-box" style="display: none;">
+    <div class="chat-header" style="background: #0d47a1; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: bold;">🤖 AI Health Assistant</span>
+        <button onclick="toggleChat()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">✖</button>
+    </div>
+    
+    <div id="chat-history" class="chat-history" style="height: 320px; overflow-y: auto; padding: 10px; background: #f9f9f9;">
+        <div class="bot-msg" style="color: #2e7d32; font-weight: bold; margin-bottom: 10px;">
+            Hello! I am your AI assistant. Click a patient row or type a Ref No to start.
+        </div>
+    </div>
+    
+    <div class="quick-actions" style="padding: 8px; background: #eeeeee; display: flex; gap: 8px; border-top: 1px solid #ddd;">
+        <button onclick="triggerQuickAction('show')" class="btn-quick">Details</button>
+        <button onclick="triggerQuickAction('recommend')" class="btn-quick">Advice</button>
+        <button onclick="triggerQuickAction('supply')" class="btn-quick">Supply</button>
+    </div>
+
+    <div class="chat-input" style="padding: 10px; border-top: 1px solid #ccc; display: flex; gap: 8px; background: white;">
+        <input type="text" id="user-input" placeholder="Ask about dosage or supply..." style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        <button onclick="sendMessage()" style="padding: 8px 15px; background: #0d47a1; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Send</button>
+    </div>
+</div>
+
+<script>
+    let currentRef = "";
+
+    // INITIAL LOAD
+    window.onload = function() {
+        loadAppointments();
+    }
+
+    // FETCH LIVE APPOINTMENTS
+    function loadAppointments() {
+        fetch('/get-appointments')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('appointmentTableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px;'>No appointments.</td></tr>";
+                return;
+            }
+            tbody.innerHTML = data.map(a => `
+                <tr>
+                    <td style="padding:12px; border:1px solid #ddd;">${a.patient_name}</td>
+                    <td style="padding:12px; border:1px solid #ddd;">${a.dob}</td>
+                    <td style="padding:12px; border:1px solid #ddd;"><b>${a.ref_no}</b></td>
+                    <td style="padding:12px; border:1px solid #ddd;">${a.doctor}</td>
+                    <td style="padding:12px; border:1px solid #ddd;">${a.time}</td>
+                    <td style="padding:12px; border:1px solid #ddd; color:green; font-weight:bold;">${a.status}</td>
+                </tr>
+            `).join('');
+        });
+    }
+
+    // FORM & RECORD LOGIC
+    function fillForm(data) {
+        document.getElementById('name').value = data.Nameoftablets || "";
+        document.getElementById('ref').value = data.Reference_No || "";
+        document.getElementById('disease').value = data.Disease || "";
+        document.getElementById('dose').value = data.dose || "";
+        document.getElementById('no_of_tablets').value = data.Numbersoftablets || "";
+        document.getElementById('lot').value = data.lot || "";
+        document.getElementById('issue_date').value = data.issuedate || "";
+        document.getElementById('exp_date').value = data.expdate || "";
+        document.getElementById('daily_dose').value = data.dailydose || "";
+        document.getElementById('storage').value = data.storage || "";
+        document.getElementById('reg_date').value = data.reg_date || "";
+        document.getElementById('pname').value = data.patientname || "";
+        document.getElementById('dob').value = data.DOB || "";
+        document.getElementById('address').value = data.patientaddress || "";
+        document.getElementById('doctor').value = data.doctor || "";
+        currentRef = data.Reference_No;
+    }
+
+    function deleteRecord() {
+        const ref = document.getElementById('ref').value;
+        if(ref && confirm("⚠️ Delete record: " + ref + "?")) {
+            window.location.href = "/delete/" + ref;
+        }
+    }
+
+    // OCR SCAN LOGIC
+    function scanPrescription() {
+        const fileInput = document.getElementById('ocrFile');
+        const status = document.getElementById('ocrStatus');
+        const file = fileInput.files[0];
+        if (!file) return alert("Select a file.");
+        status.innerHTML = "⏳ Scanning with AI Vision...";
+        const formData = new FormData();
+        formData.append('file', file);
+        fetch('/scan_prescription', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            status.innerHTML = data.error ? "❌ Error" : "✅ AI Scan Complete!";
+            if(data.pname) document.getElementById('pname').value = data.pname;
+            if(data.name) document.getElementById('name').value = data.name;
+        });
+    }
+
+    // CHATBOT LOGIC
+    function toggleChat() {
+        const chat = document.getElementById('chat-popup');
+        chat.style.display = (chat.style.display === "none") ? "flex" : "none";
+    }
+
+    function triggerQuickAction(type) {
+        if (currentRef) {
+            document.getElementById('user-input').value = type + " " + currentRef;
+            sendMessage();
+        } else {
+            alert("❌ Select a patient row first!");
+        }
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('user-input');
+        const history = document.getElementById('chat-history');
+        const text = input.value;
+        if(!text.trim()) return;
+        history.innerHTML += `<div style=\"text-align:right; color:#0d47a1; margin:10px 0; font-size:13px;\"><b>You:</b> ${text}</div>`;
+        input.value = "";
+        history.scrollTop = history.scrollHeight;
+        fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: text, context_ref: currentRef})
+        })
+        .then(res => res.json())
+        .then(data => {
+            history.innerHTML += `<div style=\"text-align:left; color:#2e7d32; margin:10px 0; font-size:13px; border-left: 3px solid #2e7d32; padding-left: 5px;\"><b>Bot:</b> ${data.response}</div>`;
+            if (data.ref) currentRef = data.ref;
+            history.scrollTop = history.scrollHeight;
+        });
+    }
+</script>
+</body>
+</html>

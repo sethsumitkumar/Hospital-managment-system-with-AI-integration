@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Analytics Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0d47a1;
+            color: white;
+            padding: 10px 20px;
+        }
+        .back-link {
+            background: white;
+            color: #0d47a1;
+            padding: 5px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-top: 5px solid #0d47a1;
+            text-align: center;
+        }
+        .kpi-card h4 { margin: 0; color: #555; font-size: 16px; }
+        .kpi-card p { margin: 10px 0 0; font-size: 32px; font-weight: bold; color: #0d47a1; }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            height: 400px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        @media (max-width: 800px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body style="background: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+
+<div class="admin-nav">
+    <span style="font-weight: bold;">📊 ANALYTICS DASHBOARD</span>
+    <a href="{{ url_for('index') }}" class="back-link">⬅ Back to Records</a>
+</div>
+
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    
+    <h2 style="color: #333; border-bottom: 2px solid #0d47a1; padding-bottom: 10px;">Hospital Performance Overview</h2>
+
+    <div class="kpi-container">
+        <div class="kpi-card">
+            <h4>👥 Total Hospital Patients</h4>
+            <p id="totalPatients">{{ patients_count }}</p>
+        </div>
+        <div class="kpi-card" style="border-top-color: #b71c1c;">
+            <h4>📈 New Registrations (6 Months)</h4>
+            <p id="monthCount">0</p>
+        </div>
+        <div class="kpi-card" style="border-top-color: #2e7d32;">
+            <h4>🤖 AI Optimization Status</h4>
+            <p style="font-size: 18px; color: #2e7d32;">System Optimized</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="chart-container">
+            <h3 style="margin-top:0; color:#b71c1c; font-size: 18px;">📈 Monthly Registration Trends</h3>
+            <canvas id="monthlyChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3 style="margin-top:0; color:#0d47a1; font-size: 18px;">🩺 Disease Distribution Analysis</h3>
+            <canvas id="diseaseChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // DASHBOARD LOAD LOGIC
+    function loadDashboardData() {
+        // 1. Load Monthly Line Chart
+        fetch('/monthly-data').then(res => res.json()).then(data => {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Registrations',
+                        data: data.values,
+                        borderColor: '#b71c1c',
+                        backgroundColor: 'rgba(183, 28, 28, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+            // Update the KPI count for the month
+            if(data.values.length > 0) {
+                const total = data.values.reduce((a, b) => a + b, 0);
+                document.getElementById('monthCount').innerText = total;
+            }
+        });
+
+        // 2. Load Disease Pie Chart
+        fetch('/analytics-data').then(res => res.json()).then(data => {
+            const ctx = document.getElementById('diseaseChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: ['#0d47a1', '#b71c1c', '#2e7d32', '#ff9800', '#9c27b0', '#009688', '#607d8b']
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        });
+    }
+
+    window.onload = loadDashboardData;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Original style for the confirmation buttons preserved */
+        .confirm-btns {
+            display: none; 
+            padding: 10px;
+            background: #fff3e0;
+            gap: 10px;
+            border-top: 1px solid #ffe0b2;
+            justify-content: center;
+        }
+        .btn-yes { background: #2e7d32; color: white; border: none; padding: 5px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-no { background: #c62828; color: white; border: none; padding: 5px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body style="background: #f0f2f5; font-family: sans-serif;">
+
+<div class="header" style="background: #0d47a1; color:white; padding:20px; text-align:center;">
+    <h1>🏥 PATIENT RECORD PORTAL</h1>
+    <p>Enter your Reference Number in the chat below to retrieve your medical data.</p>
+</div>
+
+<div style="display: flex; justify-content: center; align-items: center; height: 60vh;">
+    <div style="text-align: center; background: white; padding: 40px; border-radius: 15px;">
+        <img src="{{ url_for('static', filename='robo.webp') }}" width="120">
+        <h2>Welcome to AI Assistant</h2>
+        <button onclick="toggleChat()" style="padding:10px 20px; background:#0d47a1; color:white; border-radius:20px; border:none; cursor:pointer;">
+            💬 Open AI Assistant
+        </button>
+    </div>
+</div>
+
+<div id="chat-popup" style="display:none; position:fixed; bottom:20px; right:20px; width:350px; height:500px; background:white; border:1px solid #ccc; flex-direction:column; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-radius:10px; overflow:hidden;">
+    <div style="background:#0d47a1; color:white; padding:15px; display:flex; justify-content:space-between;">
+        <b>🤖 AI Health Assistant</b>
+        <button onclick="toggleChat()" style="color:white; background:none; border:none; font-size:18px;">✖</button>
+    </div>
+    
+    <div id="chat-history" style="flex:1; overflow-y:auto; padding:15px; background:#f9f9f9; font-size:14px;">
+        <div style="color:green; margin-bottom:10px;">Hello! Type your Patient Ref No (e.g. REF1001) to see your records.</div>
+    </div>
+
+    <div id="confirm-area" class="confirm-btns">
+        <button onclick="handleConfirmation('Yes')" class="btn-yes">Yes, Book Now</button>
+        <button onclick="handleConfirmation('No')" class="btn-no">No, Thanks</button>
+    </div>
+
+    <div style="padding:10px; background:#eee; display:flex; gap:5px; border-top:1px solid #ddd;">
+        <button onclick="quickAction('Advice')" style="flex:1; font-size:10px; padding:5px;">AI Advice</button>
+        <button onclick="quickAction('Risk')" style="flex:1; font-size:10px; padding:5px;">Check Risk</button>
+        <button onclick="quickAction('Appointment')" style="flex:1; font-size:10px; padding:5px; background:#b71c1c; color:white; border:none; border-radius:3px;">📅 Book Appointment</button>
+    </div>
+
+    <div style="padding:10px; border-top:1px solid #ccc; display:flex; gap:10px;">
+        <input type="text" id="user-input" placeholder="Enter Ref No or ask a question..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:5px;">
+        <button onclick="sendMessage()" style="background:#0d47a1; color:white; border:none; padding:8px; border-radius:5px;">Send</button>
+    </div>
+</div>
+
+<script>
+    let currentRef = "";
+    
+    document.getElementById("user-input").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+
+    function toggleChat() { 
+        const c = document.getElementById('chat-popup'); 
+        c.style.display = (c.style.display==='none') ? 'flex' : 'none'; 
+    }
+
+    // UPDATED: Logic to send distinct triggers for Advice vs Risk
+    function quickAction(type) {
+        if (type === 'Appointment') {
+            document.getElementById('user-input').value = "Book an appointment";
+        } else if (type === 'Advice') {
+            document.getElementById('user-input').value = "Give medical advice for " + currentRef;
+        } else if (type === 'Risk') {
+            document.getElementById('user-input').value = "Check health risk for " + currentRef;
+        } else {
+            document.getElementById('user-input').value = type + " " + currentRef;
+        }
+        sendMessage();
+    }
+
+    function handleConfirmation(choice) {
+        document.getElementById('user-input').value = choice;
+        document.getElementById('confirm-area').style.display = 'none';
+        sendMessage();
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('user-input');
+        const history = document.getElementById('chat-history');
+        const confirmArea = document.getElementById('confirm-area');
+        const text = input.value;
+        if(!text.trim()) return;
+
+        history.innerHTML += `<div style="text-align:right; margin:10px 0; color:#0d47a1; font-size:13px;"><b>You:</b> ${text}</div>`;
+        input.value = "";
+        history.scrollTop = history.scrollHeight;
+        
+        fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: text, context_ref: currentRef})
+        })
+        .then(res => res.json())
+        .then(data => {
+            history.innerHTML += `<div style="margin:10px 0; color:#2e7d32; border-left:3px solid #2e7d32; padding-left:5px; font-size:13px;"><b>Bot:</b> ${data.response}</div>`;
+            
+            if(data.ref) {
+                currentRef = data.ref;
+            }
+
+            // ORIGINAL LOGIC PRESERVED: Show buttons only on appointment trigger
+            if (data.response.includes("Welcome! Are you a")) {
+                confirmArea.style.display = 'flex';
+                // Reset buttons for Old/New flow
+                confirmArea.innerHTML = `
+                    <button onclick="handleConfirmation('New Patient')" class="btn-yes">New Patient</button>
+                    <button onclick="handleConfirmation('Old Patient')" class="btn-no">Old Patient</button>
+                `;
+            } else {
+                confirmArea.style.display = 'none';
+            }
+            
+            history.scrollTop = history.scrollHeight;
+        })
+        .catch(err => {
+            history.innerHTML += `<div style="color:red; font-size:12px;">Connection error. Please check your server.</div>`;
+        });
+    }
+</script>
+</body>
+</html>
